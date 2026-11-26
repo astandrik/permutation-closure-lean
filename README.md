@@ -12,10 +12,59 @@ $$
 \Gamma(\langle M\rangle) = K_{C_1} \sqcup \cdots \sqcup K_{C_k}.
 $$
 
-This is the theorem in the appendix to the 2016 paper by Vyacheslav
+This is the graph equality in the appendix to the 2016 paper by Vyacheslav
 Shvedovsky, Anton Standrik and Yuriy Bilan. Its group-theoretic basis is
 the classical fact that the orbits of a generated group are the connected
 components of its generator graph. [Original statement, pp. 146–147](https://www.economics-sociology.eu/files/ES_9_2_Shvedovsky_Standrik_Bilan.pdf#page=10) · [DOI](https://doi.org/10.14254/2071-789X.2016/9-2/9) · [Azhar and Reif, Lemma 4.2.2 (1999)](https://users.cs.duke.edu/~reif/paper/azhar/group/group.pub.pdf#page=18)
+
+## Closure with loops
+
+Let $X=\{1,\ldots,n\}$, let $S_n$ be its symmetric group, and let
+$M\subseteq S_n$ be any set. Write $[x,y]=[y,x]$ for an unordered pair,
+allowing $x=y$. For $A\subseteq S_n$, define the undirected graph
+$\Gamma_\ell(A)$ on $X$ by its edge set
+
+$$
+E_\ell(A)=\{[x,\sigma(x)]\mid x\in X,\ \sigma\in A\}.
+$$
+
+Each edge occurs once. A loop $[x,x]$ is present exactly when some
+$\sigma\in A$ fixes $x$. Deleting the loops gives the simple graph
+$\Gamma(A)$ above. [Edge definition and loop convention in Lean](PermutationClosure.lean#L155-L176)
+
+**Algorithm.** Let $e$ be the identity permutation. Set
+
+$$
+A_0=M\cup\{e\},\qquad
+A_{r+1}=A_r\cup\{\sigma\circ\tau\mid \sigma,\tau\in A_r\}.
+$$
+
+Stop at the **first** $r$ for which $A_{r+1}=A_r$ and return $H=A_r$.
+[First stopping round in Lean](PermutationClosure.lean#L194-L209)
+
+**Theorem.** The algorithm terminates and returns $H=\langle M\rangle$.
+For every $x,y\in X$, including $x=y$,
+
+$$
+[x,y]\in E_\ell(H)
+\quad\Longleftrightarrow\quad
+x\text{ and }y\text{ belong to the same connected component of }\Gamma_\ell(M).
+$$
+
+Thus each original component contributes a complete graph with one loop
+at every vertex, including singleton components. [Theorem in Lean](PermutationClosure.lean#L211-L224) · [Equality of edge sets](PermutationClosure.lean#L187-L192)
+
+**Proof.** Every strict round adds a permutation, and $S_n$ is finite.
+At the stopping round $H$ contains $e$ and is closed under composition.
+If $g\in H$ has order $d$, then $g^{-1}=g^{d-1}\in H$. Hence $H$ is a
+subgroup containing $M$. Every round lies in $\langle M\rangle$, so
+$H=\langle M\rangle$. A walk from $x$ to $y$ gives a product of generators
+and their inverses that sends $x$ to $y$. Conversely, applying the factors
+of such a product in order gives a walk. The empty product fixes every vertex.
+
+**Empty input.** For $M=\varnothing$, the input graph has no edges.
+Already $A_0=A_1=\{e\}$, so $r=0$ and the output edges are exactly
+$[x,x]$ for $x\in X$. [Empty-input proof](PermutationClosure.lean#L226-L241)
 
 ## General graph lemma
 
@@ -41,20 +90,12 @@ then applies the general lemma to `graph M`. [Derivation in Lean](PermutationClo
 
 ## Lean statement
 
-`PermutationClosure.permutation_closure_theorem` combines this graph
-equality with stabilization of the multiplication process on `Fin n`.
+`PermutationClosure.permutation_closure_theorem` gives the simple-graph
+version on `Fin n` for nonempty `M`, with multiplication rounds starting at `M`.
 [Appendix theorem in Lean](PermutationClosure.lean#L138-L148)
 
 Mathlib also states the orbit characterization for labelled Schreier graphs
 in `Quiver.SchreierGraph.reachable_iff`. [Mathlib source](https://github.com/leanprover-community/mathlib4/blob/v4.36.0/Mathlib/Combinatorics/Quiver/Schreier.lean#L283-L291)
-
-For the multiplication process, start with $A_0=M$ and take
-$A_{r+1}=A_r\cup A_r A_r$. The stopping condition in the formalization
-is $A_{r+1}=A_r$. For nonempty $M$, all sufficiently late rounds equal
-$\langle M\rangle$. For $M=\varnothing$, every round started from $M$ is
-empty, while the generated subgroup contains the identity.
-`productRound_insert_one_stabilizes` covers every input by starting from
-$M\cup\{1\}$. [Algorithm and lemma in the paper](https://www.economics-sociology.eu/files/ES_9_2_Shvedovsky_Standrik_Bilan.pdf#page=10)
 
 ## Check the proof
 
