@@ -1,0 +1,11 @@
+name = "permutation-closure-lean"
+defaultTargets = ["PermutationClosure"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+# mathlib v4.36.0
+rev = "fc4f59e577feb1a4956671bc04ac18aaaf8cd842"
+
+[[lean_lib]]
+name = "PermutationClosure"
