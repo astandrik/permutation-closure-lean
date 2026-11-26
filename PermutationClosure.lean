@@ -1,9 +1,9 @@
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Order.OrderIsoNat
+public import PermutationClosure.ComponentCliques
 
 /-!
 # The graph of a set of permutations and its closure
@@ -54,34 +54,29 @@ theorem reachable_iff (M : Set (Equiv.Perm V)) (x y : V) :
   · rintro ⟨g, hg, rfl⟩
     exact reachable_apply M hg x
 
-/-- The closure graph is the disjoint union of the complete graphs on the
-connected components of the original graph, including singleton components. -/
-theorem closure_adj_iff_same_component (M : Set (Equiv.Perm V)) (x y : V) :
-    (graph (Subgroup.closure M : Set (Equiv.Perm V))).Adj x y ↔
-      x ≠ y ∧ (graph M).connectedComponentMk x = (graph M).connectedComponentMk y := by
-  rw [SimpleGraph.ConnectedComponent.eq]
-  constructor
-  · rintro ⟨hne, ⟨g, hg, rfl⟩ | ⟨g, hg, rfl⟩⟩
-    · exact ⟨hne, reachable_apply M hg _⟩
-    · exact ⟨hne, (reachable_apply M hg _).symm⟩
-  · rintro ⟨hne, hxy⟩
-    exact ⟨hne, Or.inl ((reachable_iff M x y).mp hxy)⟩
+/-- Passing to the generated subgroup turns reachability into adjacency between distinct vertices. -/
+theorem closure_graph_eq_fromRel_reachable (M : Set (Equiv.Perm V)) :
+    graph (Subgroup.closure M : Set (Equiv.Perm V)) = SimpleGraph.fromRel (graph M).Reachable := by
+  apply congrArg SimpleGraph.fromRel
+  funext x y
+  exact propext (reachable_iff M x y).symm
 
 /-- Graph equality on the original vertices. The supremum is the union of the
 edge sets. Each complete graph is included by its component's vertex map. -/
 theorem closure_graph_eq_union (M : Set (Equiv.Perm V)) :
     graph (Subgroup.closure M : Set (Equiv.Perm V)) =
       ⨆ C : (graph M).ConnectedComponent, (SimpleGraph.completeGraph C.supp).map Subtype.val := by
-  ext x y
-  rw [closure_adj_iff_same_component, SimpleGraph.iSup_adj]
-  constructor
-  · rintro ⟨hne, hxy⟩
-    let C := (graph M).connectedComponentMk x
-    have hx : x ∈ C.supp := rfl
-    have hy : y ∈ C.supp := hxy.symm
-    exact ⟨C, hne, ⟨x, hx⟩, ⟨y, hy⟩, fun e => hne (congrArg Subtype.val e), rfl, rfl⟩
-  · rintro ⟨C, hne, a, b, _, rfl, rfl⟩
-    exact ⟨hne, ((C.mem_supp_iff _).mp a.property).trans ((C.mem_supp_iff _).mp b.property).symm⟩
+  calc
+    _ = SimpleGraph.fromRel (graph M).Reachable := closure_graph_eq_fromRel_reachable M
+    _ = _ := (graph M).fromRel_reachable_eq_iSup_completeGraph
+
+/-- Two vertices are adjacent in the closure graph exactly when they are distinct
+and belong to the same original component. -/
+theorem closure_adj_iff_same_component (M : Set (Equiv.Perm V)) (x y : V) :
+    (graph (Subgroup.closure M : Set (Equiv.Perm V))).Adj x y ↔
+      x ≠ y ∧ (graph M).connectedComponentMk x = (graph M).connectedComponentMk y := by
+  rw [closure_graph_eq_fromRel_reachable, SimpleGraph.fromRel_adj, SimpleGraph.ConnectedComponent.eq,
+    SimpleGraph.reachable_comm (u := y) (v := x), or_self]
 
 section ProductRounds
 
